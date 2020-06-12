@@ -37,6 +37,8 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
+
+	"github.com/CosmWasm/wasmd/x/relayer"
 )
 
 const appName = "WasmApp"
@@ -66,6 +68,8 @@ var (
 		supply.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
+
+		relayer.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -124,6 +128,8 @@ type WasmApp struct {
 	evidenceKeeper *evidence.Keeper
 	upgradeKeeper  upgrade.Keeper
 	wasmKeeper     wasm.Keeper
+
+	relayerKeeper relayer.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -257,6 +263,8 @@ func NewWasmApp(
 	supportedFeatures := "staking"
 	app.wasmKeeper = wasm.NewKeeper(app.cdc, keys[wasm.StoreKey], app.accountKeeper, app.bankKeeper, app.stakingKeeper, wasmRouter, wasmDir, wasmConfig, supportedFeatures, nil, nil)
 
+	app.relayerKeeper = relayer.NewKeeper(app.cdc, keys[relayer.StoreKey])
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
@@ -274,6 +282,8 @@ func NewWasmApp(
 		wasm.NewAppModule(app.wasmKeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
 		evidence.NewAppModule(*app.evidenceKeeper),
+
+		relayer.NewAppModule(app.relayerKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
